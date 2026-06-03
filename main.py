@@ -26,6 +26,8 @@ async def lifespan(app: FastAPI):
     # 3. Chạy khi Server tắt
     scheduler.shutdown()
 
+app = FastAPI(title="D-Pulse AI API", lifespan=lifespan)
+
 # --- API ENDPOINTS ---
 @app.get("/")
 def health_check():
