@@ -1,0 +1,8 @@
+fastapi==0.110.0
+uvicorn==0.28.0
+pymongo==4.6.2
+scikit-learn==1.4.1.post1
+underthesea
+APScheduler==3.10.4
+python-dotenv==1.0.1
+pandas==2.2.1
