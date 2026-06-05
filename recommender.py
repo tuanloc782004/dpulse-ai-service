@@ -45,50 +45,54 @@ def train_tfidf_model(services_data):
     print(f"🤖 Đã nạp thành công {len(ids)} Dịch vụ vào Ma trận In-Memory TF-IDF.")
 
 def get_recommendations(user_id, preferences, booked_ids, wishlist_ids, top_k=6):
-    """Tính Cosine Similarity để đưa ra gợi ý"""
     global tfidf_vectorizer, tfidf_matrix, services_df
 
     if tfidf_matrix is None or services_df is None:
+        print("❌ Lỗi: Ma trận TF-IDF chưa được nạp!")
         return []
 
-    # 1. TẠO PROFILE TEXT CHO USER (Gia trọng số)
+    # 1. TẠO PROFILE TEXT CHO USER
     user_text_parts = []
     
-    # Cộng điểm Preferences (Trọng số x1)
     if preferences:
         prefs_str = " ".join(preferences)
         user_text_parts.append(preprocess_text(prefs_str))
 
-    # Cộng điểm Wishlist (Trọng số x2)
     wishlist_texts = services_df[services_df['service_id'].isin(wishlist_ids)]['text'].tolist()
     if wishlist_texts:
         user_text_parts.extend(wishlist_texts * 2) 
 
-    # Cộng điểm Booking (Trọng số x3 - Tín hiệu mạnh nhất)
     booked_texts = services_df[services_df['service_id'].isin(booked_ids)]['text'].tolist()
     if booked_texts:
         user_text_parts.extend(booked_texts * 3)
 
     user_profile_text = " ".join(user_text_parts)
+    
+    # ---- DÒNG IN LOG ĐỂ DEBUG ----
+    print(f"\n🧠 [AI DEBUG] Khách hàng ID: {user_id}")
+    print(f"👉 Preferences của khách: {preferences}")
+    print(f"👉 Văn bản tổng hợp để tính toán: '{user_profile_text}'")
+    print(f"👉 Tổng số dịch vụ đang nằm trong RAM: {len(services_df)}")
+    # ------------------------------
 
-    # NẾU USER MỚI TINH (Cold Start) -> Chả có thông tin gì
     if not user_profile_text.strip():
-        return [] # Trả về mảng rỗng (Node.js sẽ lấy các dịch vụ Trending bù vào)
+        print("⚠️ Khách hàng chưa có đủ dữ liệu sở thích (Cold Start).")
+        return [] 
 
-    # 2. VECTOR HÓA USER & TÍNH COSINE SIMILARITY
+    # 2. VECTOR HÓA VÀ TÍNH COSINE
     user_vector = tfidf_vectorizer.transform([user_profile_text])
     cosine_sim = cosine_similarity(user_vector, tfidf_matrix).flatten()
-
-    # Lấy top K index có độ tương đồng cao nhất
     top_indices = cosine_sim.argsort()[-top_k:][::-1]
 
-    # Loại bỏ những dịch vụ mà user ĐÃ ĐẶT RỒI (Không gợi ý lại chỗ vừa đi xong)
     recommendations = []
+    print("📊 [AI DEBUG] BẢNG ĐIỂM CHI TIẾT (TỪ CAO XUỐNG THẤP):")
     for idx in top_indices:
         svc_id = services_df.iloc[idx]['service_id']
         score = float(cosine_sim[idx])
         
-        # Chỉ lấy nếu độ tương đồng > 0 và chưa từng book
+        # In tất cả điểm ra màn hình để tra cứu
+        print(f"   - Service ID: {svc_id} | Điểm Cosine: {score:.4f}")
+        
         if score > 0 and svc_id not in booked_ids:
             recommendations.append({
                 "service_id": svc_id,
