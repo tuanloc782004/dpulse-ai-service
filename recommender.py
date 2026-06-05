@@ -39,7 +39,7 @@ def train_tfidf_model(services_data):
     services_df = pd.DataFrame({"service_id": ids, "text": corpus})
 
     # Khởi tạo và Train TF-IDF
-    tfidf_vectorizer = TfidfVectorizer(max_df=0.8, min_df=1)
+    tfidf_vectorizer = TfidfVectorizer(max_df=1.0, min_df=1)
     tfidf_matrix = tfidf_vectorizer.fit_transform(corpus)
     
     print(f"🤖 Đã nạp thành công {len(ids)} Dịch vụ vào Ma trận In-Memory TF-IDF.")
